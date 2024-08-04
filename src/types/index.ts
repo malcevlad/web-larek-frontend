@@ -40,4 +40,4 @@ export interface IOrderResult {
 export type IFormErrors = Partial<Record<keyof IForms, string>>;
 
 // Тип товара в корзине
-export type IBasketItem = Pick<ICard, 'id' | 'title' | 'price'>;
+export type IBasketItem = Pick<ICard, 'id' | 'title' | 'price'> & {index: number};
