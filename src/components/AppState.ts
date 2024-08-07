@@ -10,13 +10,11 @@ export class AppState extends Model<IAppState> {
     catalog: ICard[];  
     preview: string | null; 
     basket: IBasketItem[] = [];
-    order: IOrder = {
+    forms: IForms = {
         payment: '',
         address: '',
         email: '',
-        phone: '',
-        items: [],
-        total: 0
+        phone: ''
     };
     formErrors: IFormErrors = {};
 
@@ -49,25 +47,29 @@ export class AppState extends Model<IAppState> {
         return this.basket.reduce((a, c) => c.price !== null ? a + c.price : a, 0);
     }
 
+    checkBasket(productId: string): boolean {
+        return this.basket.some(item => item.id === productId);
+    }
+
     clearBasket() {
         this.basket = [];
         this.emitChanges('basket:change', { basket: this.basket });
     }
 
     setPaymentField(field: keyof IForms, value: string) {
-        this.order[field] = value;
+        this.forms[field] = value;
 
         if (this.validatePayment()) {
-            this.events.emit('payment:ready', this.order);
+            this.events.emit('payment:ready', this.forms);
         }
     }
 
     validatePayment() {
         const errors: typeof this.formErrors = {};
-        if (!this.order.payment) {
+        if (!this.forms.payment) {
             errors.payment = 'Необходимо выбрать способ оплаты';
         }
-        if (!this.order.address) {
+        if (!this.forms.address) {
             errors.address = 'Необходимо указать адрес';
         }
         this.formErrors = errors;
@@ -76,19 +78,19 @@ export class AppState extends Model<IAppState> {
     }
     
     setOrderField(field: keyof IForms, value: string) {
-        this.order[field] = value;
+        this.forms[field] = value;
 
         if (this.validateOrder()) {
-            this.events.emit('order:ready', this.order);
+            this.events.emit('order:ready', this.forms);
         }
     }
 
     validateOrder() {
         const errors: typeof this.formErrors = {};
-        if (!this.order.email) {
+        if (!this.forms.email) {
             errors.email = 'Необходимо указать email';
         }
-        if (!this.order.phone) {
+        if (!this.forms.phone) {
             errors.phone = 'Необходимо указать телефон';
         }
         this.formErrors = errors;
@@ -97,8 +99,10 @@ export class AppState extends Model<IAppState> {
     }
 
     createOrder(): IOrder {
-        this.order.items = this.basket.map(item => item.id);
-        this.order.total = this.getTotal();
-        return { ...this.order };
+        return {
+            ...this.forms,
+            items: this.basket.map(item => item.id),
+            total: this.getTotal()
+        }
     }
 }

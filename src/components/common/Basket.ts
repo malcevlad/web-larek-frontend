@@ -27,7 +27,7 @@ export class Basket extends Component<IBasketView> {
         }
 
         this.items = [];
-        this.selected = [];
+        this.selected = []; 
     }
 
     set items(items: HTMLElement[]) {
@@ -51,42 +51,4 @@ export class Basket extends Component<IBasketView> {
     set total(total: number) {
         this.setText(this._total, `${total} синапсов`);
     }
-}
-
-interface ICardActions {
-	onClick: (event: MouseEvent) => void;
-}
-
-export class BasketItem extends Component<IBasketItem> {
-	protected _index: HTMLElement;
-	protected _title: HTMLElement;
-	protected _price: HTMLElement;
-	protected _removeButton: HTMLButtonElement;
-
-	constructor(container: HTMLElement, events?: ICardActions) {
-		super(container);
-		this._index = container.querySelector('.basket__item-index');
-		this._title = container.querySelector('.card__title');
-		this._price = container.querySelector('.card__price');
-		this._removeButton = ensureElement<HTMLButtonElement>(
-			'.basket__item-delete',
-			container
-		);
-		if (events?.onClick) {
-			this._removeButton.addEventListener('click', events.onClick);
-		}
-	}
-
-	set index(value: number) {
-		this.setText(this._index, value + 1);
-	}
-
-	set title(value: string) {
-		this.setText(this._title, value);
-	}
-	
-	set price(value: string) {
-		this.setText(this._price, `${value} синапсов`);
-	}
-
 }

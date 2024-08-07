@@ -3,15 +3,15 @@ import './scss/styles.scss';
 import { AppApi } from './components/AppApi';
 import { EventEmitter } from './components/base/events';
 import { CDN_URL, API_URL } from './utils/constants';
-import {cloneTemplate, ensureElement} from "./utils/utils";
+import { cloneTemplate, ensureElement } from "./utils/utils";
 import { AppState, CatalogChangeEvent } from './components/AppState';
 import { Page } from './components/Page';
 import { Modal } from './components/common/Modal';
-import { Basket, BasketItem } from './components/common/Basket';
-import { Order } from './components/Order';
+import { Basket } from './components/common/Basket';
+import { Contacts, Order } from './components/Order';
 import { Success } from './components/common/Success';
 import { IBasketItem, ICard, IForms } from './types';
-import { Card } from './components/Card';
+import { BasketItem, Card } from './components/Card';
 
 const events = new EventEmitter();
 const api = new AppApi(CDN_URL, API_URL);
@@ -34,8 +34,12 @@ const page = new Page(document.body, events);
 const modal = new Modal(ensureElement<HTMLElement>('#modal-container'), events);
 const basket = new Basket(cloneTemplate(basketTemplate), events);
 const order = new Order(cloneTemplate(orderTemplate), events);
-const contacts = new Order(cloneTemplate(contactsTemplate), events);
-
+const contacts = new Contacts(cloneTemplate(contactsTemplate), events);
+const success = new Success(cloneTemplate(successTemplate), {
+    onClick: () => {
+        modal.close(); 
+    }
+})
 
 
 events.on<CatalogChangeEvent>('items:changed', () => {
@@ -57,9 +61,7 @@ events.on('card:select', (item: ICard) => {
 });
 
 events.on('preview:changed', (item: ICard) => {
-    const showItem = (item: ICard) => {
-        
-        const inBasket = appState.basket.some(basketItem => basketItem.id === item.id);
+        const inBasket = appState.checkBasket(item.id);
         const card = new Card('card', cloneTemplate(cardPreviewTemplate), {
             onClick: () => {
                 events.emit('add:card', item)
@@ -80,19 +82,6 @@ events.on('preview:changed', (item: ICard) => {
                 price: item.price,
             })
         })
-    }
-    if (item) {
-        api.getItemList()
-            .then((result) => {
-                appState.catalog = result;
-                showItem(item);
-            })
-            .catch((err) => {
-                console.error(err);
-            })
-    } else {
-        modal.close();
-    }
 })
 
 events.on('add:card', (card: IBasketItem) => {
@@ -113,6 +102,7 @@ events.on('basket:change', () => {
         })
 
         return basketItem.render({
+            id: item.id,
             title: item.title,
             index: index,
             price: item.price
@@ -161,7 +151,7 @@ events.on('formErrors:change', (errors: Partial<IForms>) => {
 });
 
 events.on('payment:change', (button: HTMLButtonElement) => {
-    appState.order.payment = button.name;
+    appState.forms.payment = button.name;
     appState.validatePayment();
 })
 
@@ -174,22 +164,16 @@ events.on(/^contacts\..*:change/, (data: { field: keyof IForms, value: string })
 });
 
 events.on('contacts:submit', () => {
-    appState.createOrder();
-    
-    api.orderItems(appState.order)
+    api.orderItems(appState.createOrder())
     .then(result => {
-        const success = new Success(cloneTemplate(successTemplate), {
-            onClick: () => {
-                modal.close();
-                appState.clearBasket();
-                page.counter = 0;
-            }
-        })
+        appState.clearBasket();
+        page.counter = 0;
         modal.render({
             content: success.render({
                 total: result.total
             })
         })
+        
     })
     .catch(err => {
         console.log(err);
