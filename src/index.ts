@@ -11,7 +11,7 @@ import { Basket } from './components/common/Basket';
 import { Contacts, Order } from './components/Order';
 import { Success } from './components/common/Success';
 import { IBasketItem, ICard, IForms } from './types';
-import { BasketItem, Card } from './components/Card';
+import { BasketItemCard, MainPageCard, ModalCard } from './components/Card';
 
 const events = new EventEmitter();
 const api = new AppApi(CDN_URL, API_URL);
@@ -41,10 +41,9 @@ const success = new Success(cloneTemplate(successTemplate), {
     }
 })
 
-
 events.on<CatalogChangeEvent>('items:changed', () => {
     page.catalog = appState.catalog.map(item => {
-        const card = new Card('card', cloneTemplate(cardCatalogTemplate), {
+        const card = new MainPageCard(cloneTemplate(cardCatalogTemplate), {
             onClick: () => events.emit('card:select', item)
         });
         return card.render({
@@ -62,7 +61,7 @@ events.on('card:select', (item: ICard) => {
 
 events.on('preview:changed', (item: ICard) => {
         const inBasket = appState.checkBasket(item.id);
-        const card = new Card('card', cloneTemplate(cardPreviewTemplate), {
+        const card = new ModalCard(cloneTemplate(cardPreviewTemplate), {
             onClick: () => {
                 events.emit('add:card', item)
                 if(!inBasket){
@@ -97,7 +96,7 @@ events.on('basket:change', () => {
     basket.items = appState.basket.map((item, index) => {
         basket.total = appState.getTotal();
 
-        const basketItem = new BasketItem(cloneTemplate(cardBasketTemplate), {
+        const basketItem = new BasketItemCard(cloneTemplate(cardBasketTemplate), {
             onClick: () => events.emit('delete:card', item)
         })
 
